@@ -1,0 +1,7 @@
+gerado/
+*.tokens
+*.interp
+__pycache__/
+.venv/
+.claude/settings.local.json
+Expr.g4
