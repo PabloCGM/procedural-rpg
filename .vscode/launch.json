@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "lexico.py: exemplo da Parte A",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/lexico.py",
+            "args": ["exemplos/parte_a.ml"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "lexico.py: escolher arquivo",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/lexico.py",
+            "args": ["${input:programa}"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "programa",
+            "type": "promptString",
+            "description": "Caminho do programa a analisar",
+            "default": "exemplos/parte_a.ml"
+        }
+    ]
+}
