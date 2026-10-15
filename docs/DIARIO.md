@@ -56,3 +56,19 @@ exemplos. Adotamos `.ml` para ficar igual ao enunciado e renomeamos o programa d
 Parte A para `exemplos/parte_a.ml`. Um teste compara esse arquivo com o programa da
 especificação. Removemos os `.ml` vazios da estrutura inicial e deixamos o diário em
 `docs/`, como na estrutura da seção 5. Os 25 testes passam.
+
+## 15/10/2026 — Etapa E3: analisador sintático e árvore sintática
+
+Implementamos a análise sintática completa da linguagem Procedural RPG usando ANTLR 4 e
+separação de gramáticas com `parser grammar SuaLingParser;` importando o vocabulário
+léxico via `options { tokenVocab = SuaLing; }`.
+
+O parser recebe diretamente o fluxo de tokens sintetizados pelo motor de layout da E2
+(`INDENTA`, `DEDENTA` e `NOVA_LINHA`), permitindo expressar blocos hierárquicos e regras de
+entidades sem ambiguidade com espaços. Mapeamos os 8 níveis de precedência de operadores
+na regra `expr`, cobrindo expressões aritméticas, relacionais e lógicas com rótulos de nós.
+
+Criamos o módulo `src/analise_sintatica.py` e o CLI `src/sintatico.py` com a opção `--arvore`
+para visualizar a árvore sintática concreta de forma hierárquica. Criamos 5 exemplos de
+programas sintaticamente inválidos em `invalidos_sintaticos/` e expandimos a suíte de testes
+para 33 testes automatizados (25 léxicos e 8 sintáticos), todos aprovados.

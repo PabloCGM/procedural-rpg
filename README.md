@@ -115,32 +115,29 @@ adaptado ao domínio de RPG.
 
 ## 3. Fase do projeto
 
-- **E2 — Parte A:** especificação preenchida.
-- **E2 — Parte B:** gramática léxica ANTLR, listagem de tokens, diagnósticos e layout implementados.
-- **E2 — Parte C:** três programas válidos e três inválidos entregues, com testes automáticos.
-- **E3/E4:** parser, validação semântica e execução não implementados.
+- **E2 — Analisador Léxico:** especificação preenchida, gramática léxica ANTLR, motor de layout, listagem de tokens e diagnósticos entregues.
+- **E3 — Analisador Sintático e Árvore:** gramática sintática `SuaLingParser.g4` (com `tokenVocab`), CLI `src/sintatico.py` com opção `--arvore`, precedência de operadores e 5 exemplos inválidos sintáticos entregues.
+- **E4:** análise semântica e execução não implementadas.
 
-O comando `src/lexico.py` **não inicia a campanha**. Ele reconhece inclusive `iniciar`
-como token, mas não executa essa instrução. Sintaxe de blocos, referências, tipos,
-participantes e condições de marcos serão verificados nas etapas seguintes.
+O analisador sintático valida a estrutura gramatical e constrói a árvore sintática concreta (Parse Tree). A árvore pode ser inspecionada executando:
+
+```bash
+python src/sintatico.py --arvore exemplos/ola.ml
+```
 
 ## 4. Como rodar os testes
 
-Após instalar as dependências e gerar o lexer:
+Após instalar as dependências e gerar o lexer e parser (`sh gerar.sh` ou `.\gerar.ps1`):
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-Com o ambiente virtual ativo em outro terminal:
+Com o ambiente virtual ativo no Git Bash:
 
 ```sh
 python -m unittest discover -s tests -v
 ```
 
-Os 25 testes cobrem palavras reservadas e identificadores, operadores, acesso por
-ponto, inteiros e reais, textos e escapes, comentários, indentação, fechamento de
-blocos, recuperação de erros e execução do CLI a partir de outro diretório. Também
-verificam os exemplos da Parte C: os válidos não produzem erros, cada inválido produz
-exatamente o erro esperado na linha e coluna certas, e `exemplos/parte_a.ml` é idêntico
-ao programa da especificação.
+Os 33 testes cobrem a análise léxica (25 testes) e a análise sintática (8 testes), verificando reconhecimento de tokens, precedência de operadores na árvore, layout/indentação, detecção e recuperação de erros, além de validar todos os programas de teste em `exemplos/`, `invalidos/` e `invalidos_sintaticos/`.
+
