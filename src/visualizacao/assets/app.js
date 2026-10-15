@@ -587,6 +587,304 @@
     diagramaConteiner.appendChild(svg);
   }
 
+  // 6. Aba Narrativa: Entidades, Grafo de Marcos e Operações
+  const narrativaConteudo = document.getElementById('narrativa-conteudo');
+
+  const ICONES_ENTIDADE = {
+    universo: '🌍',
+    campanha: '📜',
+    jogador: '👤',
+    personagem: '👤',
+    historia: '📖',
+    marco: '🚩',
+    capitulo: '🏛️',
+    cena: '🎬',
+    cenario: '🗺️',
+    item: '🎒'
+  };
+
+  function initAbaNarrativa() {
+    const est = DADOS.estrutura || {};
+    narrativaConteudo.innerHTML = '';
+
+    if (!est.entidades || (est.entidades.length === 0 && (!est.marcos || est.marcos.length === 0))) {
+      narrativaConteudo.innerHTML = `
+        <div style="padding: 20px; text-align: center; color: var(--texto-fraco); font-size: 13px;">
+          Nenhuma entidade ou estrutura narrativa encontrada neste programa.
+        </div>
+      `;
+      return;
+    }
+
+    // 1. Ponto de Entrada da Sessão (iniciar campanha com historia)
+    if (est.iniciar) {
+      const cardIniciar = document.createElement('div');
+      cardIniciar.className = 'cartao-iniciar-destaque';
+      cardIniciar.innerHTML = `
+        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #a78bfa; margin-bottom: 4px;">
+          🎮 Ponto de Entrada da Sessão Interativa
+        </div>
+        <div style="font-family: var(--fonte-mono); font-size: 13px; font-weight: 600;">
+          iniciar <span style="color: #60a5fa;">${escapeHtml(est.iniciar.campanha)}</span> com <span style="color: #34d399;">${escapeHtml(est.iniciar.historia)}</span>
+        </div>
+      `;
+      narrativaConteudo.appendChild(cardIniciar);
+    }
+
+    // 2. Grafo de Marcos Narrativos
+    if (est.marcos && est.marcos.length > 0) {
+      const secaoMarcos = document.createElement('div');
+      secaoMarcos.className = 'secao-narrativa';
+      secaoMarcos.innerHTML = `
+        <div class="secao-narrativa-titulo">
+          <span>🚩</span> Rede de Marcos Narrativos (${est.marcos.length})
+        </div>
+      `;
+
+      // Renderiza grafo SVG de dependência dos marcos
+      const grafoSvg = renderizarGrafoMarcosSVG(est.marcos, est.encerramentos || []);
+      secaoMarcos.appendChild(grafoSvg);
+      narrativaConteudo.appendChild(secaoMarcos);
+    }
+
+    // 3. Operações Narrativas
+    if (est.operacoes && est.operacoes.length > 0) {
+      const secaoOp = document.createElement('div');
+      secaoOp.className = 'secao-narrativa';
+      secaoOp.innerHTML = `
+        <div class="secao-narrativa-titulo">
+          <span>⚡</span> Operações Narrativas Disponíveis (${est.operacoes.length})
+        </div>
+      `;
+
+      est.operacoes.forEach(op => {
+        const cardOp = document.createElement('div');
+        cardOp.className = 'cartao-operacao';
+        cardOp.title = 'Clique para ver no código';
+
+        let instrucoesHtml = '';
+        if (op.instrucoes && op.instrucoes.length > 0) {
+          instrucoesHtml = `
+            <div style="margin-top: 6px; font-size: 11px; color: var(--texto-fraco); font-weight: 600;">Efeitos confirmados:</div>
+            <div class="lista-instrucoes-op">
+              ${op.instrucoes.map(ins => `<div>• ${escapeHtml(ins)}</div>`).join('')}
+            </div>
+          `;
+        }
+
+        cardOp.innerHTML = `
+          <div class="operacao-header">
+            <span class="operacao-nome">operacao ${escapeHtml(op.caminho)}</span>
+            <span class="badge-requer">requer ${escapeHtml(op.requer)}</span>
+          </div>
+          ${instrucoesHtml}
+        `;
+
+        cardOp.addEventListener('click', () => {
+          scrollParaLinha(op.linha);
+        });
+
+        secaoOp.appendChild(cardOp);
+      });
+
+      narrativaConteudo.appendChild(secaoOp);
+    }
+
+    // 4. Árvore de Entidades do RPG
+    if (est.entidades && est.entidades.length > 0) {
+      const secaoEnt = document.createElement('div');
+      secaoEnt.className = 'secao-narrativa';
+      secaoEnt.innerHTML = `
+        <div class="secao-narrativa-titulo">
+          <span>🌍</span> Hierarquia de Entidades Declaradas
+        </div>
+      `;
+
+      est.entidades.forEach(ent => {
+        secaoEnt.appendChild(criarElementoEntidade(ent, 0));
+      });
+
+      narrativaConteudo.appendChild(secaoEnt);
+    }
+  }
+
+  function renderizarGrafoMarcosSVG(marcos, encerramentos) {
+    const conteiner = document.createElement('div');
+    conteiner.style.cssText = 'background: var(--bg-painel); border: 1px solid var(--borda); border-radius: 8px; padding: 12px; overflow-x: auto;';
+
+    const largura = Math.max(700, marcos.length * 230 + 100);
+    const altura = 180;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', largura);
+    svg.setAttribute('height', altura);
+
+    const posicoes = {};
+    marcos.forEach((m, idx) => {
+      posicoes[m.variavel] = {
+        x: 120 + idx * 220,
+        y: 80,
+        dado: m
+      };
+    });
+
+    // Marcador de seta SVG
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', 'seta-dependencia');
+    marker.setAttribute('viewBox', '0 0 10 10');
+    marker.setAttribute('refX', '10');
+    marker.setAttribute('refY', '5');
+    marker.setAttribute('markerWidth', '6');
+    marker.setAttribute('markerHeight', '6');
+    marker.setAttribute('orient', 'auto-start-reverse');
+    const pathSeta = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    pathSeta.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
+    pathSeta.setAttribute('fill', '#a78bfa');
+    marker.appendChild(pathSeta);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+    // Desenha arestas de dependência
+    marcos.forEach(m => {
+      const posDestino = posicoes[m.variavel];
+      (m.dependencias || []).forEach(depNome => {
+        const posOrigem = posicoes[depNome];
+        if (posOrigem && posDestino) {
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const d = `M ${posOrigem.x + 85} ${posOrigem.y} L ${posDestino.x - 85} ${posDestino.y}`;
+          path.setAttribute('d', d);
+          path.setAttribute('stroke', '#8b5cf6');
+          path.setAttribute('stroke-width', '2');
+          path.setAttribute('marker-end', 'url(#seta-dependencia)');
+          svg.appendChild(path);
+        }
+      });
+    });
+
+    // Desenha nós de marcos
+    Object.values(posicoes).forEach(p => {
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('transform', `translate(${p.x}, ${p.y})`);
+      g.style.cursor = 'pointer';
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', '-85');
+      rect.setAttribute('y', '-32');
+      rect.setAttribute('width', '170');
+      rect.setAttribute('height', '64');
+      rect.setAttribute('rx', '8');
+      rect.setAttribute('fill', '#1e2233');
+      rect.setAttribute('stroke', '#a78bfa');
+      rect.setAttribute('stroke-width', '1.5');
+
+      const titulo = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      titulo.setAttribute('x', '0');
+      titulo.setAttribute('y', '-12');
+      titulo.setAttribute('text-anchor', 'middle');
+      titulo.setAttribute('fill', '#f1f5f9');
+      titulo.setAttribute('font-size', '12');
+      titulo.setAttribute('font-weight', 'bold');
+      titulo.textContent = `🚩 ${p.dado.variavel}`;
+
+      const cond = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      cond.setAttribute('x', '0');
+      cond.setAttribute('y', '12');
+      cond.setAttribute('text-anchor', 'middle');
+      cond.setAttribute('fill', '#94a3b8');
+      cond.setAttribute('font-size', '10');
+      cond.setAttribute('font-family', 'var(--fonte-mono)');
+      const condTexto = p.dado.condicao ? `quando ${p.dado.condicao}` : '(sem condicao)';
+      cond.textContent = condTexto.length > 24 ? condTexto.slice(0, 22) + '..' : condTexto;
+
+      g.appendChild(rect);
+      g.appendChild(titulo);
+      g.appendChild(cond);
+
+      g.addEventListener('click', () => {
+        scrollParaLinha(p.dado.linha);
+      });
+
+      svg.appendChild(g);
+    });
+
+    conteiner.appendChild(svg);
+
+    if (encerramentos && encerramentos.length > 0) {
+      const encDiv = document.createElement('div');
+      encDiv.style.cssText = 'margin-top: 10px; font-size: 11px; color: var(--texto-secundario); font-family: var(--fonte-mono); border-top: 1px solid var(--borda-suave); padding-top: 8px;';
+      encDiv.innerHTML = `
+        <strong>Critério de Encerramento:</strong> ${encerramentos.map(e => `encerrar <span style="color: #c084fc;">${escapeHtml(e.historia)}</span> quando <span style="color: #fbbf24;">${escapeHtml(e.condicao)}</span>`).join('; ')}
+      `;
+      conteiner.appendChild(encDiv);
+    }
+
+    return conteiner;
+  }
+
+  function criarElementoEntidade(ent, profundidade) {
+    const card = document.createElement('div');
+    card.className = 'cartao-entidade';
+    card.style.marginLeft = `${profundidade * 16}px`;
+
+    const icone = ICONES_ENTIDADE[ent.tipo] || '📦';
+    const nomeVisual = ent.propriedades.nome || ent.id;
+
+    let propsHtml = '';
+    const propChaves = Object.keys(ent.propriedades).filter(k => k !== 'nome');
+    if (propChaves.length > 0) {
+      propsHtml = `
+        <div class="cartao-propriedades">
+          ${propChaves.map(k => `<div><strong>${escapeHtml(k)}:</strong> ${escapeHtml(ent.propriedades[k])}</div>`).join('')}
+        </div>
+      `;
+    }
+
+    let estadosHtml = '';
+    if (ent.estados && ent.estados.length > 0) {
+      estadosHtml = `
+        <table class="tabela-estados-mini">
+          <thead>
+            <tr><th>Tipo</th><th>Campo</th><th>Valor Inicial</th></tr>
+          </thead>
+          <tbody>
+            ${ent.estados.map(e => `
+              <tr>
+                <td style="color: #60a5fa;">${escapeHtml(e.tipo)}</td>
+                <td style="color: #38bdf8;">${escapeHtml(e.caminho)}</td>
+                <td style="color: #34d399;">${escapeHtml(e.valor)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="cartao-header">
+        <div class="cartao-titulo">
+          <span>${icone}</span>
+          <span>${escapeHtml(nomeVisual)}</span>
+          <span style="font-size: 11px; font-family: var(--fonte-mono); color: var(--texto-fraco);">(${escapeHtml(ent.variavel)})</span>
+        </div>
+        <span class="badge-tipo-entidade">${escapeHtml(ent.tipo)}</span>
+      </div>
+      ${propsHtml}
+      ${estadosHtml}
+    `;
+
+    if (ent.filhos && ent.filhos.length > 0) {
+      const filhosConteiner = document.createElement('div');
+      filhosConteiner.style.marginTop = '10px';
+      ent.filhos.forEach(f => {
+        filhosConteiner.appendChild(criarElementoEntidade(f, profundidade + 1));
+      });
+      card.appendChild(filhosConteiner);
+    }
+
+    return card;
+  }
+
   // Listeners de navegação de abas
   document.querySelectorAll('.aba-btn:not(.desabilitada)').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -603,6 +901,7 @@
   renderizarCodigoFonte();
   initAbaLexica();
   initAbaSintatica();
+  initAbaNarrativa();
 
   // Expõe no escopo global
   window.CompiladorVisual = {
@@ -615,4 +914,5 @@
     selecionarNoArvore
   };
 })();
+
 
