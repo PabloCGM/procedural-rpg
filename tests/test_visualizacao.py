@@ -154,6 +154,29 @@ class HTMLVisualizadorTests(unittest.TestCase):
         self.assertNotIn('</script><script>alert(1)</script>', html)
         self.assertIn(r'\u003c/script>', html)
 
+    def test_html_contem_recursos_pan_zoom_diagrama(self):
+        from src.visualizacao.html import gerar_html_visualizador
+
+        modelo_teste = {
+            "arquivo": "ola.ml",
+            "fonte": 'mundo = Universo("vila")',
+            "fases": [],
+            "tokens": [],
+            "erros": [],
+            "arvore": {"id": 1, "nome": "programa", "tipo": "regra", "linha_inicio": 1, "coluna_inicio": 0, "linha_fim": 1, "coluna_fim": 23, "filhos": []},
+            "estrutura": {},
+        }
+        html = gerar_html_visualizador(modelo_teste)
+
+        # Verifica presença dos elementos essenciais de pan e zoom
+        self.assertIn('btn-zoom-mais', html)
+        self.assertIn('btn-zoom-menos', html)
+        self.assertIn('zoom-indicador', html)
+        self.assertIn('btn-zoom-ajustar', html)
+        self.assertIn('diagrama-canvas-area', html)
+        self.assertIn('diagrama-viewport', html)
+
+
 
 class CLIVisualizarTests(unittest.TestCase):
     def executar_cli(self, *args):

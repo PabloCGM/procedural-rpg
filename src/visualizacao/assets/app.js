@@ -335,7 +335,7 @@
       btnVisaoDiagrama.classList.add('ativo');
       btnVisaoArvore.classList.remove('ativo');
       arvoreConteiner.style.display = 'none';
-      diagramaConteiner.style.display = 'block';
+      diagramaConteiner.style.display = 'flex';
       renderizarDiagramaSVG(noSelecionado || DADOS.arvore);
     });
 
@@ -356,6 +356,9 @@
 
     chkModoCompacto.addEventListener('change', () => {
       renderizarArvoreSintatica();
+      if (btnVisaoDiagrama.classList.contains('ativo')) {
+        renderizarDiagramaSVG(noSelecionado || DADOS.arvore);
+      }
     });
 
     renderizarArvoreSintatica();
@@ -464,34 +467,57 @@
     }
   }
 
-  // 5. Renderizador de Diagrama em SVG Hierárquico Puro
+  // 5. Renderizador de Diagrama em SVG Hierárquico com Pan & Zoom
   function renderizarDiagramaSVG(noRaiz) {
     if (!noRaiz) return;
     diagramaConteiner.innerHTML = '';
 
-    const cabecalhoInfo = document.createElement('div');
-    cabecalhoInfo.style.cssText = 'font-size: 12px; color: var(--texto-secundario); margin-bottom: 12px; display: flex; justify-content: space-between;';
-    cabecalhoInfo.innerHTML = `
-      <span>Exibindo subárvore: <strong>${escapeHtml(noRaiz.rotulo || noRaiz.nome)}</strong> (Linha ${noRaiz.linha_inicio})</span>
-      <button class="btn-acao pequeno" id="btn-reset-diagrama">Voltar para Raiz</button>
+    // Barra de ferramentas superior do diagrama
+    const barraFerramentas = document.createElement('div');
+    barraFerramentas.className = 'diagrama-barra-ferramentas';
+    barraFerramentas.innerHTML = `
+      <div class="diagrama-info-subarvore">
+        <span>Subárvore: <strong>${escapeHtml(noRaiz.rotulo || noRaiz.nome)}</strong> (Linha ${noRaiz.linha_inicio})</span>
+        ${noRaiz !== DADOS.arvore ? '<button class="btn-acao pequeno" id="btn-reset-diagrama">Voltar para Raiz</button>' : ''}
+      </div>
+      <div class="dica-navegacao">
+        <span>🖐️ Arraste para mover</span>
+        <span>&bull;</span>
+        <span>🔍 Roda do mouse para zoom</span>
+      </div>
+      <div class="diagrama-controles-zoom">
+        <button class="btn-acao pequeno" id="btn-zoom-menos" title="Diminuir zoom (Roda para trás)">➖</button>
+        <span class="badge-zoom" id="zoom-indicador" title="Clique para resetar em 100%">100%</span>
+        <button class="btn-acao pequeno" id="btn-zoom-mais" title="Aumentar zoom (Roda para frente)">➕</button>
+        <button class="btn-acao pequeno" id="btn-zoom-ajustar" title="Ajustar diagrama à tela">Ajustar</button>
+        <button class="btn-acao pequeno" id="btn-zoom-reset" title="Tamanho original 100%">1:1</button>
+      </div>
     `;
-    diagramaConteiner.appendChild(cabecalhoInfo);
+    diagramaConteiner.appendChild(barraFerramentas);
 
-    cabecalhoInfo.querySelector('#btn-reset-diagrama').addEventListener('click', () => {
-      renderizarDiagramaSVG(DADOS.arvore);
-    });
+    const btnResetDiagrama = barraFerramentas.querySelector('#btn-reset-diagrama');
+    if (btnResetDiagrama) {
+      btnResetDiagrama.addEventListener('click', () => {
+        renderizarDiagramaSVG(DADOS.arvore);
+      });
+    }
 
-    // Calcula posições dos nós em árvore compacta
+    // Área do canvas com SVG interativo
+    const canvasArea = document.createElement('div');
+    canvasArea.className = 'diagrama-canvas-area';
+    diagramaConteiner.appendChild(canvasArea);
+
+    // Calcula posições dos nós em árvore hierárquica
     const nosPlanos = [];
     const conexoes = [];
-    let proximoX = 40;
+    let proximoX = 50;
 
     function calcularLayout(nodo, nivel) {
       const filhosValidos = (nodo.filhos || []).filter(f => !chkModoCompacto.checked || f.nome !== 'nova_linha');
       const nodoLayout = {
         dado: nodo,
         nivel: nivel,
-        y: 40 + nivel * 70,
+        y: 50 + nivel * 75,
         x: 0,
         filhos: []
       };
@@ -499,7 +525,7 @@
 
       if (filhosValidos.length === 0) {
         nodoLayout.x = proximoX;
-        proximoX += 130;
+        proximoX += 135;
       } else {
         filhosValidos.forEach(f => {
           const fLayout = calcularLayout(f, nivel + 1);
@@ -512,14 +538,32 @@
     }
 
     const layoutRaiz = calcularLayout(noRaiz, 0);
-
-    const larguraSvg = Math.max(800, proximoX + 60);
-    const maxY = Math.max(...nosPlanos.map(n => n.y)) + 60;
+    const larguraDiagrama = Math.max(600, proximoX + 50);
+    const alturaDiagrama = Math.max(...nosPlanos.map(n => n.y)) + 60;
 
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', larguraSvg);
-    svg.setAttribute('height', maxY);
-    svg.style.cssText = 'background: var(--bg-painel); border-radius: 8px; border: 1px solid var(--borda);';
+    svg.setAttribute('class', 'diagrama-svg');
+
+    // Defs para grid pontilhado
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML = `
+      <pattern id="diag-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+        <circle cx="2" cy="2" r="1" fill="#333c56" />
+      </pattern>
+    `;
+    svg.appendChild(defs);
+
+    // Fundo com grid para orientação espacial ao arrastar
+    const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bgRect.setAttribute('width', '100%');
+    bgRect.setAttribute('height', '100%');
+    bgRect.setAttribute('fill', 'url(#diag-grid)');
+    svg.appendChild(bgRect);
+
+    // Viewport que recebe as transformações de Pan & Zoom
+    const viewport = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    viewport.setAttribute('class', 'diagrama-viewport');
+    svg.appendChild(viewport);
 
     // Desenha arestas conectadas por curvas suaves
     conexoes.forEach(c => {
@@ -529,14 +573,14 @@
       path.setAttribute('stroke', '#3b4261');
       path.setAttribute('stroke-width', '2');
       path.setAttribute('fill', 'none');
-      svg.appendChild(path);
+      viewport.appendChild(path);
     });
 
-    // Desenha nós
+    // Desenha nós interativos
     nosPlanos.forEach(n => {
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('class', 'diagrama-no-svg');
       g.setAttribute('transform', `translate(${n.x}, ${n.y})`);
-      g.style.cursor = 'pointer';
 
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('x', '-55');
@@ -577,14 +621,144 @@
       g.appendChild(rect);
       g.appendChild(text);
 
-      g.addEventListener('click', () => {
+      g.addEventListener('click', e => {
+        if (arrastou) return;
+        e.stopPropagation();
         selecionarNoArvore(n.dado, document.getElementById(`tree-row-${n.dado.id}`));
       });
 
-      svg.appendChild(g);
+      viewport.appendChild(g);
     });
 
-    diagramaConteiner.appendChild(svg);
+    canvasArea.appendChild(svg);
+
+    // Estado e Controle de Pan & Zoom
+    let scale = 1.0;
+    let translateX = 0;
+    let translateY = 0;
+    let isDragging = false;
+    let arrastou = false;
+    let startX = 0;
+    let startY = 0;
+    let startTransX = 0;
+    let startTransY = 0;
+
+    const zoomIndicador = barraFerramentas.querySelector('#zoom-indicador');
+    const btnZoomMais = barraFerramentas.querySelector('#btn-zoom-mais');
+    const btnZoomMenos = barraFerramentas.querySelector('#btn-zoom-menos');
+    const btnZoomAjustar = barraFerramentas.querySelector('#btn-zoom-ajustar');
+    const btnZoomReset = barraFerramentas.querySelector('#btn-zoom-reset');
+
+    function aplicarTransform() {
+      viewport.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
+      zoomIndicador.textContent = `${Math.round(scale * 100)}%`;
+    }
+
+    function zoomNoPonto(screenX, screenY, fator) {
+      const novoScale = Math.min(4.0, Math.max(0.15, scale * fator));
+      if (Math.abs(novoScale - scale) < 0.001) return;
+      const rect = svg.getBoundingClientRect();
+      const mx = screenX - rect.left;
+      const my = screenY - rect.top;
+      const diagX = (mx - translateX) / scale;
+      const diagY = (my - translateY) / scale;
+      translateX = mx - diagX * novoScale;
+      translateY = my - diagY * novoScale;
+      scale = novoScale;
+      aplicarTransform();
+    }
+
+    function zoomPeloCentro(fator) {
+      const rect = svg.getBoundingClientRect();
+      zoomNoPonto(rect.left + rect.width / 2, rect.top + rect.height / 2, fator);
+    }
+
+    function ajustarAoEcra() {
+      const rect = canvasArea.getBoundingClientRect();
+      const larguraCanvas = rect.width || 800;
+      const alturaCanvas = rect.height || 500;
+      const pad = 40;
+      const escalaX = (larguraCanvas - pad * 2) / larguraDiagrama;
+      const escalaY = (alturaCanvas - pad * 2) / alturaDiagrama;
+      let novaEscala = Math.min(1.2, Math.max(0.2, Math.min(escalaX, escalaY)));
+      scale = novaEscala;
+      translateX = (larguraCanvas - larguraDiagrama * scale) / 2;
+      translateY = Math.max(30, (alturaCanvas - alturaDiagrama * scale) / 2);
+      aplicarTransform();
+    }
+
+    function resetarZoom() {
+      const rect = canvasArea.getBoundingClientRect();
+      const larguraCanvas = rect.width || 800;
+      scale = 1.0;
+      translateX = Math.max(30, (larguraCanvas - larguraDiagrama) / 2);
+      translateY = 40;
+      aplicarTransform();
+    }
+
+    // Zoom via roda do mouse (para frente / para trás)
+    svg.addEventListener('wheel', e => {
+      e.preventDefault();
+      const fator = e.deltaY < 0 ? 1.15 : 0.87;
+      zoomNoPonto(e.clientX, e.clientY, fator);
+    }, { passive: false });
+
+    // Arrastar (pan) com mouse / toque via Pointer Events
+    svg.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      isDragging = true;
+      arrastou = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      startTransX = translateX;
+      startTransY = translateY;
+      svg.classList.add('arrastando');
+      svg.setPointerCapture(e.pointerId);
+    });
+
+    svg.addEventListener('pointermove', e => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        arrastou = true;
+      }
+      translateX = startTransX + dx;
+      translateY = startTransY + dy;
+      aplicarTransform();
+    });
+
+    function finalizarDrag(e) {
+      if (isDragging) {
+        isDragging = false;
+        svg.classList.remove('arrastando');
+        try {
+          svg.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+      }
+    }
+
+    svg.addEventListener('pointerup', finalizarDrag);
+    svg.addEventListener('pointercancel', finalizarDrag);
+
+    // Duplo clique no fundo ajusta ao enquadramento
+    svg.addEventListener('dblclick', e => {
+      if (e.target === svg || e.target === bgRect) {
+        ajustarAoEcra();
+      }
+    });
+
+    // Ações dos botões da barra de ferramentas
+    btnZoomMais.addEventListener('click', () => zoomPeloCentro(1.25));
+    btnZoomMenos.addEventListener('click', () => zoomPeloCentro(0.8));
+    btnZoomAjustar.addEventListener('click', () => ajustarAoEcra());
+    btnZoomReset.addEventListener('click', () => resetarZoom());
+    zoomIndicador.addEventListener('click', () => resetarZoom());
+
+    // Enquadramento inicial automático após o elemento estar visível
+    requestAnimationFrame(() => {
+      ajustarAoEcra();
+    });
   }
 
   // 6. Aba Narrativa: Entidades, Grafo de Marcos e Operações

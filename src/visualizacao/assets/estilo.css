@@ -446,11 +446,107 @@ body {
   font-size: 11px;
 }
 
-.arvore-conteiner, .diagrama-conteiner {
+.arvore-conteiner {
   flex: 1;
   overflow: auto;
   padding: 16px;
   font-family: var(--fonte-mono);
+}
+
+.diagrama-conteiner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 12px 16px;
+  font-family: var(--fonte-mono);
+  min-height: 400px;
+}
+
+.diagrama-barra-ferramentas {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background-color: var(--bg-cartao);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--texto-secundario);
+  flex-wrap: wrap;
+}
+
+.diagrama-info-subarvore {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.diagrama-controles-zoom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-zoom {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background-color: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  color: var(--texto-principal);
+  min-width: 48px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.badge-zoom:hover {
+  border-color: var(--cor-primaria);
+  color: #a78bfa;
+}
+
+.dica-navegacao {
+  font-size: 11px;
+  color: var(--texto-fraco);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.diagrama-canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background-color: var(--bg-painel);
+  min-height: 380px;
+}
+
+.diagrama-svg {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  user-select: none;
+  display: block;
+  touch-action: none;
+}
+
+.diagrama-svg.arrastando {
+  cursor: grabbing !important;
+}
+
+.diagrama-no-svg {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.diagrama-no-svg:hover rect {
+  filter: brightness(1.2);
 }
 
 /* Árvore Estilo TreeView */
