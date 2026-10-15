@@ -133,6 +133,73 @@ class EstruturaNarrativaTests(unittest.TestCase):
         self.assertIn("metade", marcos["fundo"]["dependencias"])
 
 
+class HTMLVisualizadorTests(unittest.TestCase):
+    def test_gerar_html_seguranca_injecao(self):
+        import json
+        from src.visualizacao.html import gerar_html_visualizador
+
+        # Teste de payload malicioso contendo </script>
+        modelo_teste = {
+            "arquivo": "teste.ml",
+            "fonte": 'texto x = "</script><script>alert(1)</script>"',
+            "fases": [],
+            "tokens": [],
+            "erros": [],
+            "arvore": None,
+            "estrutura": {},
+        }
+        html = gerar_html_visualizador(modelo_teste)
+
+        # Não deve haver </script> solto dentro do script de dados
+        self.assertNotIn('</script><script>alert(1)</script>', html)
+        self.assertIn(r'\u003c/script>', html)
+
+
+class CLIVisualizarTests(unittest.TestCase):
+    def executar_cli(self, *args):
+        import subprocess
+        import sys
+        cmd = [sys.executable, "src/visualizar.py", *args]
+        return subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+
+    def test_cli_sucesso_gera_arquivo(self):
+        saida_teste = Path("visualizacoes/teste_ola.html")
+        if saida_teste.exists():
+            saida_teste.unlink()
+
+        res = self.executar_cli("exemplos/ola.ml", "--saida", str(saida_teste), "--nao-abrir")
+        self.assertEqual(res.returncode, 0)
+        self.assertTrue(saida_teste.exists())
+        self.assertGreater(saida_teste.stat().st_size, 1000)
+
+        # Limpeza
+        if saida_teste.exists():
+            saida_teste.unlink()
+
+    def test_cli_erro_gera_arquivo_com_codigo_um(self):
+        saida_teste = Path("visualizacoes/teste_invalido.html")
+        if saida_teste.exists():
+            saida_teste.unlink()
+
+        res = self.executar_cli("invalidos_sintaticos/parenteses_sem_fechar.ml", "--saida", str(saida_teste), "--nao-abrir")
+        self.assertEqual(res.returncode, 1)
+        self.assertTrue(saida_teste.exists())
+
+        # Limpeza
+        if saida_teste.exists():
+            saida_teste.unlink()
+
+    def test_cli_arquivo_inexistente_retorna_dois(self):
+        res = self.executar_cli("arquivo_fantasma.ml", "--nao-abrir")
+        self.assertEqual(res.returncode, 2)
+
+
 if __name__ == "__main__":
     unittest.main()
+
 

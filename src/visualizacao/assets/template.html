@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compilador Visual · Procedural RPG</title>
+  <style>
+__CSS__
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-logo">
+      <span class="icone-rpg">🗡️</span>
+      <div>
+        <h1 class="titulo-principal">Procedural RPG · Visualizador do Compilador</h1>
+        <span class="subtitulo" id="header-arquivo-nome"></span>
+      </div>
+    </div>
+    <div class="stepper-pipeline" id="stepper-fases"></div>
+  </header>
+
+  <main class="app-corpo">
+    <!-- Painel Esquerdo: Código Fonte -->
+    <section class="painel-codigo">
+      <div class="painel-header">
+        <span class="painel-titulo">📄 Código-Fonte</span>
+        <div class="painel-acoes">
+          <label class="toggle-layout" title="Exibe marcadores virtuais de INDENTA e DEDENTA">
+            <input type="checkbox" id="chk-mostrar-layout"> Mostrar Layout
+          </label>
+        </div>
+      </div>
+      <div class="codigo-conteiner" id="codigo-conteiner"></div>
+    </section>
+
+    <!-- Painel Direito: Abas de Inspeção -->
+    <section class="painel-inspecao">
+      <nav class="abas-navegacao">
+        <button class="aba-btn ativa" data-aba="aba-lexico">
+          <span class="aba-icone">🔤</span> 1. Léxico
+        </button>
+        <button class="aba-btn" data-aba="aba-sintatico">
+          <span class="aba-icone">🌳</span> 2. Sintático
+        </button>
+        <button class="aba-btn" data-aba="aba-narrativa">
+          <span class="aba-icone">📜</span> 3. Narrativa
+        </button>
+        <button class="aba-btn desabilitada" title="Disponível na Etapa E4">
+          <span class="aba-icone">⏳</span> 4. Semântico (E4)
+        </button>
+      </nav>
+
+      <!-- Conteúdo da Aba Léxica -->
+      <div class="aba-conteudo ativa" id="aba-lexico">
+        <div class="lexico-toolbar">
+          <div class="filtros-categoria" id="filtros-categoria"></div>
+          <input type="text" id="busca-token" class="input-busca" placeholder="Buscar token ou lexema...">
+        </div>
+        <div class="resumo-tokens" id="resumo-tokens"></div>
+        <div class="tabela-conteiner">
+          <table class="tabela-tokens" id="tabela-tokens">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Token</th>
+                <th>Lexema</th>
+                <th style="width: 70px;">Linha</th>
+                <th style="width: 70px;">Coluna</th>
+                <th>Categoria</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-tokens-corpo"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Conteúdo da Aba Sintática -->
+      <div class="aba-conteudo" id="aba-sintatico">
+        <div class="sintatico-toolbar">
+          <div class="botoes-grupo">
+            <button class="btn-acao ativo" id="btn-visao-arvore">Árvore Expansível</button>
+            <button class="btn-acao" id="btn-visao-diagrama">Diagrama de Nós</button>
+          </div>
+          <div class="botoes-grupo">
+            <button class="btn-acao pequeno" id="btn-expandir-tudo">Expandir Tudo</button>
+            <button class="btn-acao pequeno" id="btn-recolher-tudo">Recolher</button>
+            <label class="toggle-layout" style="margin-left: 10px;">
+              <input type="checkbox" id="chk-modo-compacto" checked> Modo Compacto
+            </label>
+          </div>
+        </div>
+        <div class="sintatico-info" id="sintatico-info"></div>
+        <div class="arvore-conteiner" id="arvore-conteiner"></div>
+        <div class="diagrama-conteiner" id="diagrama-conteiner" style="display: none;"></div>
+      </div>
+
+      <!-- Conteúdo da Aba Narrativa -->
+      <div class="aba-conteudo" id="aba-narrativa">
+        <div class="narrativa-aviso">
+          <span class="aviso-icone">ℹ️</span>
+          <span><strong>Prévia Estrutural da Linguagem:</strong> extraída diretamente da árvore sintática da E3. Tipos de dados, escopos e ciclo de vida de marcos serão formalmente verificados pela Análise Semântica (E4).</span>
+        </div>
+        <div class="narrativa-conteudo" id="narrativa-conteudo"></div>
+      </div>
+    </section>
+  </main>
+
+  <script id="dados-compilador" type="application/json">
+__DADOS_JSON__
+  </script>
+  <script>
+__JS__
+  </script>
+</body>
+</html>
