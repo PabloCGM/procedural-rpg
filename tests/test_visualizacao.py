@@ -80,5 +80,59 @@ class ModeloDadosTests(unittest.TestCase):
         self.assertGreater(len(modelo["arvore"]["filhos"]), 0)
 
 
+class EstruturaNarrativaTests(unittest.TestCase):
+    def test_extrai_estrutura_ola_ml(self):
+        from src.visualizacao.estrutura import extrair_estrutura_narrativa
+
+        caminho = Path("exemplos/ola.ml")
+        texto = caminho.read_text(encoding="utf-8")
+        resultado = analisar_sintaxe(texto)
+        estrutura = extrair_estrutura_narrativa(resultado.arvore, texto)
+
+        # Entidades principais
+        self.assertEqual(len(estrutura["entidades"]), 1)
+        universo = estrutura["entidades"][0]
+        self.assertEqual(universo["variavel"], "vila")
+        self.assertEqual(universo["tipo"], "universo")
+        self.assertEqual(universo["propriedades"].get("nome"), "Vila do Início")
+
+        # Campanha filha
+        self.assertEqual(len(universo["filhos"]), 1)
+        campanha = universo["filhos"][0]
+        self.assertEqual(campanha["variavel"], "jornada")
+        self.assertEqual(campanha["tipo"], "campanha")
+
+        # Marcos
+        marcos = {m["variavel"]: m for m in estrutura["marcos"]}
+        self.assertIn("saudacao", marcos)
+        self.assertEqual(marcos["saudacao"]["condicao"], "ola.estado.cumprimentou")
+
+        # Operações
+        self.assertEqual(len(estrutura["operacoes"]), 1)
+        op = estrutura["operacoes"][0]
+        self.assertEqual(op["caminho"], "ola.cumprimentar")
+        self.assertIn("nao ola.estado.cumprimentou", op["requer"])
+
+        # Iniciar
+        self.assertIsNotNone(estrutura["iniciar"])
+        self.assertEqual(estrutura["iniciar"]["campanha"], "jornada")
+
+    def test_extrai_dependencias_espiral_ml(self):
+        from src.visualizacao.estrutura import extrair_estrutura_narrativa
+
+        caminho = Path("exemplos/espiral.ml")
+        texto = caminho.read_text(encoding="utf-8")
+        resultado = analisar_sintaxe(texto)
+        estrutura = extrair_estrutura_narrativa(resultado.arvore, texto)
+
+        marcos = {m["variavel"]: m for m in estrutura["marcos"]}
+        self.assertIn("primeira", marcos)
+        self.assertIn("metade", marcos)
+        self.assertIn("fundo", marcos)
+        self.assertIn("primeira", marcos["metade"]["dependencias"])
+        self.assertIn("metade", marcos["fundo"]["dependencias"])
+
+
 if __name__ == "__main__":
     unittest.main()
+
