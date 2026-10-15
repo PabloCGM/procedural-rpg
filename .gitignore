@@ -5,3 +5,4 @@ __pycache__/
 .venv/
 .claude/settings.local.json
 Expr.g4
+.antlr/
