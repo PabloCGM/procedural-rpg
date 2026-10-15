@@ -64,3 +64,4 @@ if __name__ == "__main__":
         if hasattr(saida, "reconfigure"):
             saida.reconfigure(encoding="utf-8")
     raise SystemExit(main())
+

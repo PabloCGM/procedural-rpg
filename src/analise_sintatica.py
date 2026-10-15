@@ -61,3 +61,4 @@ def analisar_sintaxe(texto: str) -> ResultadoSintatico:
     arvore = parser.programa()
     erros.sort(key=lambda erro: (erro.linha, erro.coluna))
     return ResultadoSintatico(arvore=arvore, erros=erros, parser=parser)
+

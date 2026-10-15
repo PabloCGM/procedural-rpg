@@ -4,3 +4,4 @@ vila = Universo("vila")
 
 jornada = vila.campanhas.jornada
 iniciar jornada com jornada.historias.ola
+
