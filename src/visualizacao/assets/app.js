@@ -302,6 +302,291 @@
       .replace(/'/g, '&#39;');
   }
 
+  // 4. Aba Sintática: Árvore Expansível e Diagrama
+  const btnVisaoArvore = document.getElementById('btn-visao-arvore');
+  const btnVisaoDiagrama = document.getElementById('btn-visao-diagrama');
+  const btnExpandirTudo = document.getElementById('btn-expandir-tudo');
+  const btnRecolherTudo = document.getElementById('btn-recolher-tudo');
+  const chkModoCompacto = document.getElementById('chk-modo-compacto');
+  const arvoreConteiner = document.getElementById('arvore-conteiner');
+  const diagramaConteiner = document.getElementById('diagrama-conteiner');
+  const sintaticoInfo = document.getElementById('sintatico-info');
+
+  let noSelecionado = null;
+
+  function initAbaSintatica() {
+    if (!DADOS.arvore) {
+      arvoreConteiner.innerHTML = `
+        <div class="narrativa-aviso" style="border-left-color: var(--cor-aviso); color: #fde68a; background: rgba(245, 158, 11, 0.1);">
+          <span>🔒 <strong>Árvore Sintática não gerada:</strong> O pipeline foi interrompido na fase léxica para evitar erros em cascata falsos. Corrija os erros léxicos no código para gerar a árvore.</span>
+        </div>
+      `;
+      return;
+    }
+
+    btnVisaoArvore.addEventListener('click', () => {
+      btnVisaoArvore.classList.add('ativo');
+      btnVisaoDiagrama.classList.remove('ativo');
+      arvoreConteiner.style.display = 'block';
+      diagramaConteiner.style.display = 'none';
+    });
+
+    btnVisaoDiagrama.addEventListener('click', () => {
+      btnVisaoDiagrama.classList.add('ativo');
+      btnVisaoArvore.classList.remove('ativo');
+      arvoreConteiner.style.display = 'none';
+      diagramaConteiner.style.display = 'block';
+      renderizarDiagramaSVG(noSelecionado || DADOS.arvore);
+    });
+
+    btnExpandirTudo.addEventListener('click', () => {
+      document.querySelectorAll('.tree-node-filhos').forEach(el => el.style.display = 'block');
+      document.querySelectorAll('.tree-expander').forEach(el => el.textContent = '▼');
+    });
+
+    btnRecolherTudo.addEventListener('click', () => {
+      document.querySelectorAll('.tree-node-filhos').forEach((el, idx) => {
+        // Mantém a raiz aberta
+        if (idx > 0) el.style.display = 'none';
+      });
+      document.querySelectorAll('.tree-expander').forEach((el, idx) => {
+        if (idx > 0) el.textContent = '▶';
+      });
+    });
+
+    chkModoCompacto.addEventListener('change', () => {
+      renderizarArvoreSintatica();
+    });
+
+    renderizarArvoreSintatica();
+  }
+
+  function renderizarArvoreSintatica() {
+    arvoreConteiner.innerHTML = '';
+    const raizElemento = criarElementoNoArvore(DADOS.arvore, 0);
+    arvoreConteiner.appendChild(raizElemento);
+  }
+
+  function criarElementoNoArvore(no, profundidade) {
+    if (!no) return document.createDocumentFragment();
+
+    // Modo compacto: oculta quebras de linha avulsas
+    if (chkModoCompacto.checked && no.nome === 'nova_linha') {
+      return document.createDocumentFragment();
+    }
+
+    const conteiner = document.createElement('div');
+    conteiner.className = 'tree-node';
+    conteiner.dataset.nodeId = no.id;
+
+    const row = document.createElement('div');
+    row.className = 'tree-row';
+    row.id = `tree-row-${no.id}`;
+
+    const temFilhos = no.filhos && no.filhos.length > 0;
+    const expander = document.createElement('span');
+    expander.className = 'tree-expander';
+    expander.textContent = temFilhos ? '▼' : ' ';
+
+    let badgeIcone = '📂';
+    let badgeHtml = '';
+
+    if (no.tipo === 'token') {
+      badgeIcone = '🍃';
+      badgeHtml = `<span class="tree-badge-token">${escapeHtml(no.nome)}: <code>${escapeHtml(JSON.stringify(no.texto))}</code></span>`;
+    } else if (no.tipo === 'erro') {
+      badgeIcone = '⚠️';
+      badgeHtml = `<span class="tree-badge-erro">Erro Sintático: ${escapeHtml(no.texto || 'símbolo inesperado')}</span>`;
+    } else {
+      // Regra
+      if (no.rotulo) {
+        badgeHtml = `<span class="tree-badge-regra">${escapeHtml(no.nome)}</span> · <span class="tree-badge-rotulo">#${escapeHtml(no.rotulo)}</span>`;
+      } else {
+        badgeHtml = `<span class="tree-badge-regra">${escapeHtml(no.nome)}</span>`;
+      }
+    }
+
+    const posBadge = document.createElement('span');
+    posBadge.style.cssText = 'color: var(--texto-fraco); font-size: 10px; margin-left: auto;';
+    posBadge.textContent = `L${no.linha_inicio}:C${no.coluna_inicio}-L${no.linha_fim}:C${no.coluna_fim}`;
+
+    row.innerHTML = `<span class="tree-expander">${expander.textContent}</span> <span>${badgeIcone}</span> ${badgeHtml}`;
+    row.appendChild(posBadge);
+
+    conteiner.appendChild(row);
+
+    let filhosDiv = null;
+    if (temFilhos) {
+      filhosDiv = document.createElement('div');
+      filhosDiv.className = 'tree-node-filhos';
+      filhosDiv.style.display = 'block';
+
+      no.filhos.forEach(filho => {
+        filhosDiv.appendChild(criarElementoNoArvore(filho, profundidade + 1));
+      });
+      conteiner.appendChild(filhosDiv);
+    }
+
+    // Toggle expandir/recolher
+    const expanderEl = row.querySelector('.tree-expander');
+    expanderEl.addEventListener('click', e => {
+      e.stopPropagation();
+      if (!temFilhos || !filhosDiv) return;
+      const aberto = filhosDiv.style.display !== 'none';
+      filhosDiv.style.display = aberto ? 'none' : 'block';
+      expanderEl.textContent = aberto ? '▶' : '▼';
+    });
+
+    // Clique no nó da árvore: seleciona e destaca código
+    row.addEventListener('click', () => {
+      selecionarNoArvore(no, row);
+    });
+
+    return conteiner;
+  }
+
+  function selecionarNoArvore(no, rowElemento) {
+    document.querySelectorAll('.tree-row.selecionado').forEach(r => r.classList.remove('selecionado'));
+    if (rowElemento) rowElemento.classList.add('selecionado');
+    noSelecionado = no;
+
+    // Destaca o trecho no código-fonte
+    document.querySelectorAll('.codigo-linha.destaque-linha').forEach(l => l.classList.remove('destaque-linha'));
+    for (let l = no.linha_inicio; l <= no.linha_fim; l++) {
+      const linhaDiv = document.getElementById(`cod-linha-${l}`);
+      if (linhaDiv) linhaDiv.classList.add('destaque-linha');
+    }
+    scrollParaLinha(no.linha_inicio);
+
+    // Se a visão de diagrama estiver aberta, atualiza para o nó selecionado
+    if (btnVisaoDiagrama.classList.contains('ativo')) {
+      renderizarDiagramaSVG(no);
+    }
+  }
+
+  // 5. Renderizador de Diagrama em SVG Hierárquico Puro
+  function renderizarDiagramaSVG(noRaiz) {
+    if (!noRaiz) return;
+    diagramaConteiner.innerHTML = '';
+
+    const cabecalhoInfo = document.createElement('div');
+    cabecalhoInfo.style.cssText = 'font-size: 12px; color: var(--texto-secundario); margin-bottom: 12px; display: flex; justify-content: space-between;';
+    cabecalhoInfo.innerHTML = `
+      <span>Exibindo subárvore: <strong>${escapeHtml(noRaiz.rotulo || noRaiz.nome)}</strong> (Linha ${noRaiz.linha_inicio})</span>
+      <button class="btn-acao pequeno" id="btn-reset-diagrama">Voltar para Raiz</button>
+    `;
+    diagramaConteiner.appendChild(cabecalhoInfo);
+
+    cabecalhoInfo.querySelector('#btn-reset-diagrama').addEventListener('click', () => {
+      renderizarDiagramaSVG(DADOS.arvore);
+    });
+
+    // Calcula posições dos nós em árvore compacta
+    const nosPlanos = [];
+    const conexoes = [];
+    let proximoX = 40;
+
+    function calcularLayout(nodo, nivel) {
+      const filhosValidos = (nodo.filhos || []).filter(f => !chkModoCompacto.checked || f.nome !== 'nova_linha');
+      const nodoLayout = {
+        dado: nodo,
+        nivel: nivel,
+        y: 40 + nivel * 70,
+        x: 0,
+        filhos: []
+      };
+      nosPlanos.push(nodoLayout);
+
+      if (filhosValidos.length === 0) {
+        nodoLayout.x = proximoX;
+        proximoX += 130;
+      } else {
+        filhosValidos.forEach(f => {
+          const fLayout = calcularLayout(f, nivel + 1);
+          nodoLayout.filhos.push(fLayout);
+          conexoes.push({ de: nodoLayout, para: fLayout });
+        });
+        nodoLayout.x = (nodoLayout.filhos[0].x + nodoLayout.filhos[nodoLayout.filhos.length - 1].x) / 2;
+      }
+      return nodoLayout;
+    }
+
+    const layoutRaiz = calcularLayout(noRaiz, 0);
+
+    const larguraSvg = Math.max(800, proximoX + 60);
+    const maxY = Math.max(...nosPlanos.map(n => n.y)) + 60;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', larguraSvg);
+    svg.setAttribute('height', maxY);
+    svg.style.cssText = 'background: var(--bg-painel); border-radius: 8px; border: 1px solid var(--borda);';
+
+    // Desenha arestas conectadas por curvas suaves
+    conexoes.forEach(c => {
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const d = `M ${c.de.x} ${c.de.y + 15} C ${c.de.x} ${(c.de.y + c.para.y) / 2}, ${c.para.x} ${(c.de.y + c.para.y) / 2}, ${c.para.x} ${c.para.y - 15}`;
+      path.setAttribute('d', d);
+      path.setAttribute('stroke', '#3b4261');
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('fill', 'none');
+      svg.appendChild(path);
+    });
+
+    // Desenha nós
+    nosPlanos.forEach(n => {
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('transform', `translate(${n.x}, ${n.y})`);
+      g.style.cursor = 'pointer';
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', '-55');
+      rect.setAttribute('y', '-15');
+      rect.setAttribute('width', '110');
+      rect.setAttribute('height', '30');
+      rect.setAttribute('rx', '6');
+
+      let corBorda = '#4c566a';
+      let corFundo = '#1e2233';
+      let corTexto = '#e2e8f0';
+
+      if (n.dado.tipo === 'token') {
+        corBorda = '#10b981';
+        corFundo = '#064e3b';
+      } else if (n.dado.tipo === 'erro') {
+        corBorda = '#ef4444';
+        corFundo = '#7f1d1d';
+      } else if (n.dado.rotulo) {
+        corBorda = '#8b5cf6';
+        corFundo = '#3b1d6b';
+      }
+
+      rect.setAttribute('fill', corFundo);
+      rect.setAttribute('stroke', corBorda);
+      rect.setAttribute('stroke-width', '1.5');
+
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('dominant-baseline', 'central');
+      text.setAttribute('fill', corTexto);
+      text.setAttribute('font-size', '11');
+      text.setAttribute('font-family', 'var(--fonte-mono)');
+
+      const label = n.dado.rotulo || (n.dado.tipo === 'token' ? `"${n.dado.texto}"` : n.dado.nome);
+      text.textContent = label.length > 13 ? label.slice(0, 11) + '..' : label;
+
+      g.appendChild(rect);
+      g.appendChild(text);
+
+      g.addEventListener('click', () => {
+        selecionarNoArvore(n.dado, document.getElementById(`tree-row-${n.dado.id}`));
+      });
+
+      svg.appendChild(g);
+    });
+
+    diagramaConteiner.appendChild(svg);
+  }
+
   // Listeners de navegação de abas
   document.querySelectorAll('.aba-btn:not(.desabilitada)').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -317,14 +602,17 @@
   initHeader();
   renderizarCodigoFonte();
   initAbaLexica();
+  initAbaSintatica();
 
-  // Expõe no escopo global para que as abas Sintática e Narrativa dos Passos 4 e 5 se acoplem facilmente
+  // Expõe no escopo global
   window.CompiladorVisual = {
     DADOS,
     escapeHtml,
     destacarToken,
     removerDestaqueToken,
     scrollParaLinha,
-    ativarAba
+    ativarAba,
+    selecionarNoArvore
   };
 })();
+
