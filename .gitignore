@@ -6,4 +6,4 @@ __pycache__/
 .claude/settings.local.json
 Expr.g4
 .antlr/
-
+visualizacoes/

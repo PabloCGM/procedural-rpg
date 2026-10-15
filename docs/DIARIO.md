@@ -72,3 +72,23 @@ Criamos o módulo `src/analise_sintatica.py` e o CLI `src/sintatico.py` com a op
 para visualizar a árvore sintática concreta de forma hierárquica. Criamos 5 exemplos de
 programas sintaticamente inválidos em `invalidos_sintaticos/` e expandimos a suíte de testes
 para 33 testes automatizados (25 léxicos e 8 sintáticos), todos aprovados.
+
+## 15/10/2026 — Ferramenta didática: visualizador web interativo do compilador
+
+Desenvolvemos uma ferramenta visual e didática em HTML autônomo e offline (`src/visualizar.py`)
+para inspecionar todo o pipeline do compilador no navegador:
+
+1. Painel com código-fonte realçado diretamente pelos tokens do lexer (com números de linha,
+   comentários preservados e marcadores visuais de erros com indicação precisa da coluna).
+2. Stepper do pipeline no topo exibindo o status de cada fase (Léxica, Sintática, Narrativa
+   e Semântica para a E4).
+3. Aba Léxica: tabela filtrável por categorias com busca textual e destaque bidirecional
+   (passar o mouse no token acende o código-fonte e vice-versa).
+4. Aba Sintática: árvore sintática expansível/colapsável com modo compacto e diagrama gráfico
+   SVG hierárquico conectando os nós da árvore.
+5. Aba Narrativa: visualização de entidades declaradas (Universo, Campanhas, Histórias,
+   Personagens), grafo SVG de dependência de marcos narrativos e catálogo de operações.
+6. Refatoração de pipeline com parada preventiva em erros léxicos para evitar erros em cascata
+   falsos no parser, além de tradução em português de mensagens de diagnóstico do ANTLR.
+
+Expandimos a suíte para 47 testes automatizados, todos aprovados com sucesso.

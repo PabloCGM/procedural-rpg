@@ -125,7 +125,28 @@ O analisador sintático valida a estrutura gramatical e constrói a árvore sint
 python src/sintatico.py --arvore exemplos/ola.ml
 ```
 
-## 4. Como rodar os testes
+## 4. Visualizador Interativo e Didático
+
+O projeto inclui um painel web estático e offline para explorar visualmente as etapas do compilador de forma interativa e didática:
+
+```bash
+python src/visualizar.py exemplos/ola.ml
+```
+
+O comando compila o arquivo, gera um painel HTML em `visualizacoes/` (ou caminho especificado) e abre o navegador padrão automaticamente.
+
+### Recursos do Visualizador:
+- **Painel Léxico:** tabela de tokens identificados (linha, coluna, tipo e lexema), com destaque e sincronização com o código-fonte ao clicar ou passar o cursor.
+- **Painel Sintático:** árvore sintática concreta (CST) interativa com nós expansíveis/recolhíveis, modo compacto (ocultando quebras de linha e indentação), diagrama hierárquico em SVG nativo e sincronização bidirecional com as linhas do código.
+- **Painel da Narrativa:** extração estrutural das entidades de domínio declaradas (universos, personagens, histórias, capítulos, marcos) e visualização de fluxo com **grafo de dependência de marcos** em SVG, além das operações e ponto de partida da sessão de RPG.
+- **Diagnósticos Amigáveis:** mensagens sintáticas traduzidas para português claro e parada preventiva caso existam erros léxicos.
+- **100% Offline:** sem dependências de frameworks JS ou CDNs externas, funcionando em qualquer navegador moderno.
+
+Opções disponíveis no CLI:
+- `--saida <caminho>`: define o arquivo HTML de saída personalizado.
+- `--nao-abrir`: gera o arquivo sem disparar o navegador automaticamente.
+
+## 5. Como rodar os testes
 
 Após instalar as dependências e gerar o lexer e parser (`sh gerar.sh` ou `.\gerar.ps1`):
 
@@ -139,5 +160,5 @@ Com o ambiente virtual ativo no Git Bash:
 python -m unittest discover -s tests -v
 ```
 
-Os 33 testes cobrem a análise léxica (25 testes) e a análise sintática (8 testes), verificando reconhecimento de tokens, precedência de operadores na árvore, layout/indentação, detecção e recuperação de erros, além de validar todos os programas de teste em `exemplos/`, `invalidos/` e `invalidos_sintaticos/`.
+Os 47 testes cobrem a análise léxica (25 testes), a análise sintática (8 testes) e o pipeline de visualização/extração (14 testes), verificando reconhecimento de tokens, precedência de operadores na árvore, layout/indentação, detecção e recuperação de erros, além de validar todos os programas de teste em `exemplos/`, `invalidos/` e `invalidos_sintaticos/`.
 
