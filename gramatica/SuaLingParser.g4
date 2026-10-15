@@ -4,9 +4,13 @@ options {
     tokenVocab = SuaLing;
 }
 
-// Regra raiz para validação da gramática
+// Regra raiz temporária
 programa
-    : expr EOF
+    : nova_linha* instrucao_bloco nova_linha* EOF
+    ;
+
+nova_linha
+    : NOVA_LINHA
     ;
 
 // ====================================================
@@ -63,4 +67,56 @@ literal
 
 lista_argumentos
     : expr (VIRGULA expr)*
+    ;
+
+// ====================================================
+// INSTRUÇÕES, COMANDOS E BLOCOS INDENTADOS (Passo 3)
+// ====================================================
+
+tipo_dado
+    : TIPO_INTEIRO
+    | TIPO_REAL
+    | TIPO_TEXTO
+    | TIPO_BOOLEANO
+    ;
+
+caminho_identificadores
+    : IDENT (PONTO IDENT)+
+    ;
+
+atribuicao_simples
+    : IDENT ATRIBUICAO expr
+    ;
+
+declaracao_estado
+    : tipo_dado caminho_identificadores ATRIBUICAO expr
+    ;
+
+atribuicao_estado
+    : caminho_identificadores ATRIBUICAO expr
+    ;
+
+chamada_metodo
+    : expr PONTO IDENT ABRE_PAREN lista_argumentos? FECHA_PAREN
+    ;
+
+comando_narrar
+    : NARRAR expr
+    ;
+
+comando_se
+    : SE expr nova_linha* bloco_instrucoes (nova_linha* SENAO nova_linha* bloco_instrucoes)?
+    ;
+
+bloco_instrucoes
+    : INDENTA (instrucao_bloco nova_linha*)+ DEDENTA
+    ;
+
+instrucao_bloco
+    : comando_se
+    | comando_narrar
+    | declaracao_estado
+    | atribuicao_estado
+    | chamada_metodo
+    | atribuicao_simples
     ;
