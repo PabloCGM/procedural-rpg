@@ -190,6 +190,7 @@ def construir_modelo_dados(
     texto_fonte: str,
     resultado_sintatico: ResultadoSintatico,
     estrutura: dict[str, Any] | None = None,
+    resultado_semantico: Any = None,
 ) -> dict[str, Any]:
     """Gera o dicionário completo que alimenta a interface gráfica."""
     # Normaliza quebras de linha
@@ -197,6 +198,7 @@ def construir_modelo_dados(
 
     erros_lexicos = [e for e in resultado_sintatico.erros if e.categoria == "léxico" or "indentação" in e.categoria]
     erros_sintaticos = [e for e in resultado_sintatico.erros if e.categoria == "sintático"]
+    erros_semanticos = resultado_semantico.erros if resultado_semantico else []
 
     status_lexico = "erro" if erros_lexicos else "ok"
     if resultado_sintatico.bloqueado:
@@ -210,6 +212,17 @@ def construir_modelo_dados(
         resumo_sintatico = "árvore construída"
 
     status_narrativa = "bloqueada" if (resultado_sintatico.bloqueado or erros_sintaticos or resultado_sintatico.arvore is None) else "ok"
+
+    if resultado_semantico is not None:
+        if resultado_semantico.sucesso:
+            status_semantico = "ok"
+            resumo_semantico = f"{len(resultado_semantico.tabela.variaveis)} símbolos validados"
+        else:
+            status_semantico = "erro"
+            resumo_semantico = f"{len(resultado_semantico.erros)} erro(s) semântico(s)"
+    else:
+        status_semantico = "bloqueada"
+        resumo_semantico = "requer sintaxe válida"
 
     fases = [
         {
@@ -232,14 +245,18 @@ def construir_modelo_dados(
         },
         {
             "id": "semantico",
-            "nome": "4. Análise Semântica",
-            "status": "pendente",
-            "resumo": "prevista para E4",
+            "nome": "4. Análise Semântica (E4)",
+            "status": status_semantico,
+            "resumo": resumo_semantico,
         },
     ]
 
     tokens_serializados = serializar_tokens(resultado_sintatico.lexico.tokens) if resultado_sintatico.lexico else []
     arvore_serializada = serializar_arvore(resultado_sintatico.arvore) if resultado_sintatico.arvore else None
+
+    todos_erros = list(resultado_sintatico.erros)
+    if resultado_semantico:
+        todos_erros.extend(resultado_semantico.erros)
 
     erros_serializados = [
         {
@@ -248,7 +265,7 @@ def construir_modelo_dados(
             "coluna": e.coluna,
             "mensagem": e.mensagem,
         }
-        for e in resultado_sintatico.erros
+        for e in todos_erros
     ]
 
     return {

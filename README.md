@@ -117,7 +117,24 @@ adaptado ao domínio de RPG.
 
 - **E2 — Analisador Léxico:** especificação preenchida, gramática léxica ANTLR, motor de layout, listagem de tokens e diagnósticos entregues.
 - **E3 — Analisador Sintático e Árvore:** gramática sintática `SuaLingParser.g4` (com `tokenVocab`), CLI `src/sintatico.py` com opção `--arvore`, precedência de operadores e 5 exemplos inválidos sintáticos entregues.
-- **E4:** análise semântica e execução não implementadas.
+- **E4 — Análise Semântica e Execução:** sistema de tipos estático, tabela de símbolos hierárquica, verificação de escopo e receptores permitidos, validação de ciclos em grafos de marcos, interpretador/runtime com motor de sessão RPG (`src/interpretador.py`) e CLI de simulação (`src/executar.py`).
+
+### Executando o Compilador e Interpretador (E4)
+
+Para validar a semântica de um programa:
+```bash
+python src/executar.py --apenas-semantico exemplos/ola.ml
+```
+
+Para iniciar a simulação interativa da sessão de RPG:
+```bash
+python src/executar.py exemplos/ola.ml
+```
+
+Para executar comandos narrativos em lote via script:
+```bash
+python src/executar.py --script tests/roteiro_ola.txt exemplos/ola.ml
+```
 
 O analisador sintático valida a estrutura gramatical e constrói a árvore sintática concreta (Parse Tree). A árvore pode ser inspecionada executando:
 
@@ -160,5 +177,5 @@ Com o ambiente virtual ativo no Git Bash:
 python -m unittest discover -s tests -v
 ```
 
-Os 48 testes cobrem a análise léxica (25 testes), a análise sintática (8 testes) e o pipeline de visualização/extração (14 testes), verificando reconhecimento de tokens, precedência de operadores na árvore, layout/indentação, detecção e recuperação de erros, além de validar todos os programas de teste em `exemplos/` e `invalidos/`.
+Os 55 testes cobrem a análise léxica (25 testes), a análise sintática (8 testes), o pipeline de visualização/extração (14 testes), a análise semântica (5 testes) e a execução/runtime (3 testes), verificando reconhecimento de tokens, precedência de operadores na árvore, layout/indentação, detecção e recuperação de erros, tipagem estática, ciclos em grafos e simulação da narrativa de RPG, além de validar todos os programas de teste em `exemplos/` e `invalidos/`.
 

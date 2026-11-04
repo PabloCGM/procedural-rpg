@@ -91,4 +91,29 @@ para inspecionar todo o pipeline do compilador no navegador:
 6. Refatoração de pipeline com parada preventiva em erros léxicos para evitar erros em cascata
    falsos no parser, além de tradução em português de mensagens de diagnóstico do ANTLR.
 
-Expandimos a suíte para 47 testes automatizados, todos aprovados com sucesso.
+## 04/11/2026 — Etapa E4: análise semântica, runtime e simulador interativo
+
+Implementamos o back-end completo do compilador e motor narrativo de Procedural RPG (E4):
+
+1. **Sistema de Tipos e Tabela de Símbolos (`src/semantico/`):**
+   - Criação de tipos primitivos (`inteiro`, `real`, `texto`, `booleano`) e de entidades (`Universo`, `Campanha`, `Historia`, etc.).
+   - Resolução de escopo hierárquico e caminhos por ponto (`<entidade>.<colecao>.<id>` e `<objeto>.estado.<campo>`).
+   - Verificação rigorosa de compatibilidade de tipos: promoção de inteiros para reais, proibição estrita de coerção entre número e texto em `+`, checagem de tipos numéricos em comparações relacionais e expressões estritamente booleanas em `requer`, `se`, `concluir` e `encerrar`.
+
+2. **Analisador Semântico com ANTLR Visitor (`src/analise_semantica.py`):**
+   - Abordagem em dois passes estáticos (`ColetorDeclaracoesVisitor` e `VerificadorTiposVisitor`).
+   - Validação da tabela de métodos de criação permitidos por receptor (ex: proibir `campanha.cenario(...)`).
+   - Algoritmo de busca em profundidade (DFS) para detecção formal de dependências cíclicas e auto-dependências entre marcos narrativos.
+   - Validação de pertinência no comando `iniciar campanha com historia`.
+
+3. **Interpretador e Motor de Execução RPG (`src/interpretador.py` e `src/executar.py`):**
+   - Avaliador de expressões dinâmicas em memória.
+   - Motor de sessão com reavaliação automática de marcos em cascata e encerramento permanente da história.
+   - Execução transacional de operações narrativas com verificação de pré-requisito `requer`, emissão de falas `narrar` e suporte a condicionais `se`/`senao`.
+   - CLI interativo no terminal e suporte a execução não interativa via `--script` e `--apenas-semantico`.
+
+4. **Testes Automatizados e Consolidação:**
+   - Adicionamos 7 novos programas de erro semântico à pasta única `invalidos/`.
+   - Criamos `tests/test_semantico.py` e `tests/test_execucao.py`.
+   - A suíte agora conta com 55 testes automatizados (25 léxicos, 8 sintáticos, 14 visuais, 5 semânticos e 3 de runtime), todos 100% aprovados.
+

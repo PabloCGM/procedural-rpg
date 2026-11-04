@@ -49,6 +49,12 @@ def main(argv=None):
     # Executa o pipeline com parada preventiva se houver erro léxico
     resultado_sintatico = analisar_sintaxe(texto, parar_em_erro_lexico=True)
 
+    # Análise semântica se sintaxe ok
+    from src.analise_semantica import analisar_semantica
+    resultado_semantico = None
+    if resultado_sintatico.arvore and not resultado_sintatico.erros:
+        resultado_semantico = analisar_semantica(resultado_sintatico.arvore)
+
     # Extração estrutural se a árvore foi construída
     estrutura = extrair_estrutura_narrativa(resultado_sintatico.arvore, texto) if resultado_sintatico.arvore else {}
 
@@ -58,6 +64,7 @@ def main(argv=None):
         texto_fonte=texto,
         resultado_sintatico=resultado_sintatico,
         estrutura=estrutura,
+        resultado_semantico=resultado_semantico,
     )
 
     # Define caminho de saída
