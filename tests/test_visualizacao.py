@@ -209,7 +209,7 @@ class CLIVisualizarTests(unittest.TestCase):
         if saida_teste.exists():
             saida_teste.unlink()
 
-        res = self.executar_cli("invalidos_sintaticos/parenteses_sem_fechar.ml", "--saida", str(saida_teste), "--nao-abrir")
+        res = self.executar_cli("invalidos/parenteses_sem_fechar.ml", "--saida", str(saida_teste), "--nao-abrir")
         self.assertEqual(res.returncode, 1)
         self.assertTrue(saida_teste.exists())
 

@@ -26,10 +26,16 @@ class ExemplosValidosSintaticoTests(unittest.TestCase):
 
 class ExemplosInvalidosSintaticoTests(unittest.TestCase):
     def test_invalidos_sintaticos_sao_rejeitados(self):
-        pasta = Path("invalidos_sintaticos")
-        arquivos = list(pasta.glob("*.ml"))
-        self.assertGreaterEqual(len(arquivos), 5)
-        for caminho in arquivos:
+        arquivos_sintaticos = [
+            "expressao_operador_duplo.ml",
+            "iniciar_fora_de_posicao.ml",
+            "operacao_sem_requer.ml",
+            "parenteses_sem_fechar.ml",
+            "se_sem_condicao.ml",
+        ]
+        pasta = Path("invalidos")
+        for nome in arquivos_sintaticos:
+            caminho = pasta / nome
             with self.subTest(arquivo=caminho.name):
                 texto = caminho.read_text(encoding="utf-8-sig")
                 resultado = analisar_sintaxe(texto)
@@ -93,7 +99,7 @@ class CLISintaticoTests(unittest.TestCase):
         self.assertIn("Programa", res.stdout)
 
     def test_cli_erro_sintatico_retorna_um(self):
-        res = self.executar_cli("invalidos_sintaticos/parenteses_sem_fechar.ml")
+        res = self.executar_cli("invalidos/parenteses_sem_fechar.ml")
         self.assertEqual(res.returncode, 1)
         self.assertIn("Erro sintático", res.stderr)
 

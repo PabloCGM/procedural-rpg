@@ -160,5 +160,5 @@ Com o ambiente virtual ativo no Git Bash:
 python -m unittest discover -s tests -v
 ```
 
-Os 47 testes cobrem a análise léxica (25 testes), a análise sintática (8 testes) e o pipeline de visualização/extração (14 testes), verificando reconhecimento de tokens, precedência de operadores na árvore, layout/indentação, detecção e recuperação de erros, além de validar todos os programas de teste em `exemplos/`, `invalidos/` e `invalidos_sintaticos/`.
+Os 48 testes cobrem a análise léxica (25 testes), a análise sintática (8 testes) e o pipeline de visualização/extração (14 testes), verificando reconhecimento de tokens, precedência de operadores na árvore, layout/indentação, detecção e recuperação de erros, além de validar todos os programas de teste em `exemplos/` e `invalidos/`.
 
