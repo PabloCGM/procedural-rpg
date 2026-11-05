@@ -268,6 +268,46 @@ def construir_modelo_dados(
         for e in todos_erros
     ]
 
+    semantico_serializado = {}
+    if resultado_semantico and resultado_semantico.tabela:
+        tab = resultado_semantico.tabela
+        vars_list = []
+        for nome, ent in tab.variaveis.items():
+            campos_est = [{"campo": c.nome, "tipo": c.tipo.value} for c in ent.estado.values()]
+            campos_fich = [{"campo": c.nome, "tipo": c.tipo.value} for c in ent.ficha.values()]
+            vars_list.append({
+                "variavel": nome,
+                "tipo": ent.tipo.value if hasattr(ent.tipo, "value") else str(ent.tipo),
+                "id": ent.id_instancia,
+                "pai": ent.pai_variavel,
+                "estado": campos_est,
+                "ficha": campos_fich,
+            })
+        marcos_list = []
+        for id_m, m in tab.marcos.items():
+            marcos_list.append({
+                "id": m.id_marco,
+                "variavel": m.nome_variavel,
+                "historia": m.historia_pai,
+                "dependencias": m.dependencias,
+            })
+        ops_list = []
+        for c_op, op in tab.operacoes.items():
+            ops_list.append({
+                "caminho": op.caminho,
+                "id": op.id_operacao,
+                "historia": op.historia_pai,
+            })
+
+        semantico_serializado = {
+            "sucesso": resultado_semantico.sucesso,
+            "campanha_iniciar": resultado_semantico.campanha_iniciar,
+            "historia_iniciar": resultado_semantico.historia_iniciar,
+            "variaveis": vars_list,
+            "marcos": marcos_list,
+            "operacoes": ops_list,
+        }
+
     return {
         "arquivo": caminho_arquivo,
         "fonte": fonte_norm,
@@ -276,4 +316,5 @@ def construir_modelo_dados(
         "erros": erros_serializados,
         "arvore": arvore_serializada,
         "estrutura": estrutura or {},
+        "semantico": semantico_serializado,
     }

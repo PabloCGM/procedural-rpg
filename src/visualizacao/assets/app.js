@@ -1059,8 +1059,87 @@
     return card;
   }
 
+  // 6. Aba Semântica e Runtime (E4)
+  function initAbaSemantica() {
+    const conteiner = document.getElementById('semantico-conteudo');
+    if (!conteiner) return;
+
+    const sem = DADOS.semantico;
+    if (!sem || !sem.variaveis) {
+      conteiner.innerHTML = `<div style="color: var(--texto-fraco); padding: 20px;">Nenhum dado semântico gerado. Certifique-se de que a análise sintática passou sem erros.</div>`;
+      return;
+    }
+
+    let varsHtml = `
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-size: 14px; color: var(--cor-primaria); margin-bottom: 8px;">🏷️ Tabela de Símbolos e Escopos (${sem.variaveis.length} identificadores)</h3>
+        <table class="tabela-tokens" style="width: 100%;">
+          <thead>
+            <tr>
+              <th>Variável</th>
+              <th>Tipo</th>
+              <th>ID Instância</th>
+              <th>Receptor Pai</th>
+              <th>Campos de Estado / Ficha</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sem.variaveis.map(v => {
+              const campos = [
+                ...v.estado.map(e => `[estado] ${e.campo}: ${e.tipo}`),
+                ...v.ficha.map(f => `[ficha] ${f.campo}: ${f.tipo}`)
+              ].join(', ');
+              return `
+                <tr>
+                  <td style="color: #38bdf8; font-weight: bold;">${escapeHtml(v.variavel)}</td>
+                  <td><span class="badge-tipo-entidade">${escapeHtml(v.tipo)}</span></td>
+                  <td style="color: #34d399;">"${escapeHtml(v.id || '')}"</td>
+                  <td style="color: var(--texto-secundario);">${escapeHtml(v.pai || '-')}</td>
+                  <td style="color: #60a5fa; font-size: 11px;">${escapeHtml(campos || 'nenhum')}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    let marcosHtml = `
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-size: 14px; color: #10b981; margin-bottom: 8px;">🎯 Grafo de Marcos Narrativos (${sem.marcos.length} marcos validados)</h3>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          ${sem.marcos.map(m => `
+            <div style="background: var(--bg-cartao); border: 1px solid var(--borda); border-radius: 6px; padding: 10px; min-width: 200px;">
+              <div style="font-weight: bold; color: #34d399;">Marco: ${escapeHtml(m.id)} (${escapeHtml(m.variavel)})</div>
+              <div style="font-size: 11px; color: var(--texto-fraco);">História: ${escapeHtml(m.historia)}</div>
+              <div style="font-size: 11px; margin-top: 6px; color: #fbbf24;">
+                Depende de: ${m.dependencias && m.dependencias.length > 0 ? m.dependencias.map(d => `<code>${escapeHtml(d)}</code>`).join(', ') : '<em>raiz (nenhuma)</em>'}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    let opsHtml = `
+      <div>
+        <h3 style="font-size: 14px; color: #c084fc; margin-bottom: 8px;">⚡ Operações Narrativas Declaradas (${sem.operacoes.length})</h3>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          ${sem.operacoes.map(op => `
+            <div style="background: var(--bg-cartao); border: 1px solid var(--borda); border-radius: 6px; padding: 10px; min-width: 220px;">
+              <div style="font-weight: bold; color: #c084fc;">${escapeHtml(op.caminho)}</div>
+              <div style="font-size: 11px; color: var(--texto-fraco);">Vinculado à história: ${escapeHtml(op.historia)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    conteiner.innerHTML = varsHtml + marcosHtml + opsHtml;
+  }
+
   // Listeners de navegação de abas
-  document.querySelectorAll('.aba-btn:not(.desabilitada)').forEach(btn => {
+  document.querySelectorAll('.aba-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       ativarAba(btn.dataset.aba);
     });
@@ -1076,6 +1155,7 @@
   initAbaLexica();
   initAbaSintatica();
   initAbaNarrativa();
+  initAbaSemantica();
 
   // Expõe no escopo global
   window.CompiladorVisual = {

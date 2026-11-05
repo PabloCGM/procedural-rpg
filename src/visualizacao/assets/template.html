@@ -46,8 +46,8 @@ __CSS__
         <button class="aba-btn" data-aba="aba-narrativa">
           <span class="aba-icone">📜</span> 3. Narrativa
         </button>
-        <button class="aba-btn desabilitada" title="Disponível na Etapa E4">
-          <span class="aba-icone">⏳</span> 4. Semântico (E4)
+        <button class="aba-btn" data-aba="aba-semantico" id="btn-aba-semantico">
+          <span class="aba-icone">✨</span> 4. Semântico & Runtime (E4)
         </button>
       </nav>
 
@@ -99,9 +99,18 @@ __CSS__
       <div class="aba-conteudo" id="aba-narrativa">
         <div class="narrativa-aviso">
           <span class="aviso-icone">ℹ️</span>
-          <span><strong>Prévia Estrutural da Linguagem:</strong> extraída diretamente da árvore sintática da E3. Tipos de dados, escopos e ciclo de vida de marcos serão formalmente verificados pela Análise Semântica (E4).</span>
+          <span><strong>Estrutura Narrativa:</strong> Entidades declaradas, participantes e regras de progressão do RPG.</span>
         </div>
         <div class="narrativa-conteudo" id="narrativa-conteudo"></div>
+      </div>
+
+      <!-- Conteúdo da Aba Semântica (E4) -->
+      <div class="aba-conteudo" id="aba-semantico">
+        <div class="narrativa-aviso" style="border-left-color: var(--cor-primaria);">
+          <span class="aviso-icone">✨</span>
+          <span><strong>Análise Semântica e Runtime (E4):</strong> Tabela de símbolos verificada, compatibilidade de tipos estáticos e motor de execução de RPG habilitado.</span>
+        </div>
+        <div class="semantico-conteudo" id="semantico-conteudo" style="padding: 16px; overflow-y: auto; height: calc(100% - 60px);"></div>
       </div>
     </section>
   </main>
