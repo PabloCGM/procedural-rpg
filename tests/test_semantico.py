@@ -63,6 +63,13 @@ class SemanticoInvalidosTests(unittest.TestCase):
                     f"Erro esperado '{msg_esperada}' não encontrado em: {mensagens}",
                 )
 
+    def test_ciclo_aponta_a_dependencia_que_fecha_o_ciclo(self):
+        texto = Path("invalidos/ciclo_dependencia_marcos.ml").read_text(encoding="utf-8-sig")
+        res_sem = analisar_semantica(analisar_sintaxe(texto).arvore)
+        ciclos = [e for e in res_sem.erros if "dependência cíclica" in e.mensagem]
+        self.assertEqual(len(ciclos), 1)
+        self.assertEqual((ciclos[0].linha, ciclos[0].coluna), (16, 17))
+
 
 class CLISemanticoTests(unittest.TestCase):
     def executar_cli(self, *args):

@@ -70,7 +70,7 @@ na regra `expr`, cobrindo expressões aritméticas, relacionais e lógicas com r
 
 Criamos o módulo `src/analise_sintatica.py` e o CLI `src/sintatico.py` com a opção `--arvore`
 para visualizar a árvore sintática concreta de forma hierárquica. Criamos 5 exemplos de
-programas sintaticamente inválidos em `invalidos_sintaticos/` e expandimos a suíte de testes
+programas sintaticamente inválidos em `invalidos_sintaticos/` (depois juntados a `invalidos/`, na E4) e expandimos a suíte de testes
 para 33 testes automatizados (25 léxicos e 8 sintáticos), todos aprovados.
 
 ## 15/10/2026 — Ferramenta didática: visualizador web interativo do compilador
@@ -117,3 +117,19 @@ Implementamos o back-end completo do compilador e motor narrativo de Procedural 
    - Criamos `tests/test_semantico.py` e `tests/test_execucao.py`.
    - A suíte agora conta com 55 testes automatizados (25 léxicos, 8 sintáticos, 14 visuais, 5 semânticos e 3 de runtime), todos 100% aprovados.
 
+
+## 25/11/2026 — Revisão para a entrega final
+
+Seguimos o README do zero, num clone limpo, como faria quem corrige o trabalho. O passo a
+passo do PowerShell gerava só o lexer, porque tinha ficado da E2: `sintatico.py` e
+`executar.py` falhavam por falta do parser. O texto também ainda dizia que não havia parser.
+Acrescentamos a geração de `SuaLingParser.g4` ao comando direto e ao `gerar.ps1`, e uma
+tabela com o comando de cada fase.
+
+Ao rodar todos os inválidos, o erro de dependência cíclica saía em "linha 1, coluna 1":
+o DFS usava a posição guardada no símbolo do marco, que nunca era preenchida. Passamos a
+guardar a posição de cada chamada `depende_de` e a apontar a que fecha o ciclo (no exemplo,
+`m2.depende_de(m1)`, linha 16). Um teste novo fixa essa linha e coluna. Os 56 testes passam.
+
+O README passou a listar os 15 inválidos com a fase e o erro de cada um. Corrigimos um link
+da especificação da E4 que apontava para um caminho local de um dos computadores.

@@ -35,7 +35,8 @@ No PowerShell, a partir da raiz do repositório, sem precisar ativar scripts:
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\antlr4.exe -v 4.13.2 -Dlanguage=Python3 -Xexact-output-dir -o gerado gramatica/SuaLing.g4
-.\.venv\Scripts\python.exe src/lexico.py exemplos/ola.ml
+.\.venv\Scripts\antlr4.exe -v 4.13.2 -Dlanguage=Python3 -visitor -lib gerado -Xexact-output-dir -o gerado gramatica/SuaLingParser.g4
+.\.venv\Scripts\python.exe src/executar.py exemplos/ola.ml
 ```
 
 Em Linux/macOS ou terminal com `sh`, usando o ambiente virtual:
@@ -45,17 +46,29 @@ python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements.txt
 sh gerar.sh
-python src/lexico.py exemplos/ola.ml
+python src/executar.py exemplos/ola.ml
 ```
 
-`gerar.sh` fixa a versão do gerador e produz os arquivos em `gerado/`.
+Cada fase do compilador tem seu comando, todos recebendo o caminho de um programa `.ml`:
+
+| Comando | Fase | O que faz |
+|---|---|---|
+| `python src/lexico.py <arquivo>` | E2 | Lista os tokens com linha e coluna. |
+| `python src/sintatico.py --arvore <arquivo>` | E3 | Valida a sintaxe e mostra a árvore sintática. |
+| `python src/executar.py --apenas-semantico <arquivo>` | E4 | Valida léxico, sintaxe e semântica e mostra a tabela de símbolos. |
+| `python src/executar.py <arquivo>` | E4 | Valida tudo e inicia a sessão interativa de RPG. |
+| `python src/executar.py --script <roteiro> <arquivo>` | E4 | Executa a sessão com os comandos de um arquivo de texto. |
+| `python src/visualizar.py <arquivo>` | E2–E4 | Gera o painel HTML com todas as fases (seção 4). |
+
+`gerar.sh` fixa a versão do gerador e produz o lexer e o parser (com visitor) em `gerado/`.
 Há também `gerar.ps1` para PowerShell quando a execução de scripts estiver habilitada
 e `antlr4` estiver no PATH; o comando direto acima funciona sem alterar essa política.
 Na primeira geração, `antlr4-tools` pode baixar o JAR do ANTLR. Java não é necessário
-para executar um lexer que já foi gerado.
+para executar o código que já foi gerado.
 
-Regere o lexer após modificar `gramatica/SuaLing.g4`. O arquivo contém somente regras
-léxicas; não há parser. O gerador e o runtime são mantidos na mesma versão, conforme a
+Regere o código após modificar qualquer gramática. As regras léxicas ficam em
+`gramatica/SuaLing.g4` e as sintáticas em `gramatica/SuaLingParser.g4`, que importa o
+vocabulário do lexer com `tokenVocab`. O gerador e o runtime são mantidos na mesma versão, conforme a
 [documentação oficial do alvo Python do ANTLR](https://github.com/antlr/antlr4/blob/4.13.2/doc/python-target.md).
 Arquivos gerados e o ambiente virtual são ignorados pelo Git.
 
@@ -63,11 +76,16 @@ O arquivo é declarado como `lexer grammar`. Com `grammar SuaLing;` e nenhuma re
 parser, o ANTLR 4.13.2 falha na geração com `error(99): grammar SuaLing has no rules`.
 Nessa mesma versão, `antlr4-parse` (seção 6.1 do enunciado) lança `ClassCastException`
 ao receber uma gramática somente léxica. Por isso, a inspeção rápida dos tokens é feita
-com `src/lexico.py`, que também mostra a coluna e os erros.
+com `src/lexico.py`, que também mostra a coluna e os erros. A separação em duas
+gramáticas foi mantida na E3: o parser lê os tokens de layout produzidos pela E2.
 
 ### Saída e erros
 
-O programa lista o nome, lexema, linha e coluna de cada token e imprime o total.
+Todos os comandos seguem os mesmos códigos de saída e escrevem os erros em `stderr`,
+com linha e coluna. A análise para na primeira fase que encontrar erros, para não
+gerar erros em cascata nas fases seguintes.
+
+O `lexico.py` lista o nome, lexema, linha e coluna de cada token e imprime o total.
 Linha e coluna começam em **1**. O lexema é exibido entre aspas, com quebras e escapes
 representados de forma visível; seu valor não é interpretado pelo lexer.
 
@@ -81,8 +99,8 @@ erros após o primeiro e pode listar os tokens válidos encontrados no arquivo i
 
 | Código de saída | Significado |
 |---|---|
-| `0` | Nenhum erro léxico ou de indentação encontrado. |
-| `1` | Erros de tokens ou indentação, com linha e coluna. |
+| `0` | Nenhum erro encontrado nas fases executadas. |
+| `1` | Erros léxicos, de indentação, sintáticos ou semânticos, com linha e coluna. |
 | `2` | Falha de argumentos, leitura do arquivo ou dependências/geração ausentes. |
 
 Arquivos são lidos como UTF-8, com ou sem BOM. LF, CRLF e CR são normalizados para
@@ -102,13 +120,25 @@ Programas válidos, em `exemplos/`, todos analisados sem erros:
 | [parte_a.ml](exemplos/parte_a.ml) | O programa comentado da especificação. |
 
 Programas inválidos, em `invalidos/`, cada um com um único erro, indicado no comentário
-do próprio arquivo:
+do próprio arquivo. Todos terminam com código de saída `1`:
 
-| Arquivo | Erro apontado |
-|---|---|
-| [caractere_invalido.ml](invalidos/caractere_invalido.ml) | `linha 6, coluna 38: caractere não reconhecido: ';'` |
-| [texto_sem_fechar.ml](invalidos/texto_sem_fechar.ml) | `linha 6, coluna 17: texto sem fechar` |
-| [numero_malformado.ml](invalidos/numero_malformado.ml) | `linha 7, coluna 30: número malformado: '.5'` |
+| Arquivo | Fase | Erro apontado |
+|---|---|---|
+| [caractere_invalido.ml](invalidos/caractere_invalido.ml) | léxica | `linha 6, coluna 38: caractere não reconhecido: ';'` |
+| [texto_sem_fechar.ml](invalidos/texto_sem_fechar.ml) | léxica | `linha 6, coluna 17: texto sem fechar` |
+| [numero_malformado.ml](invalidos/numero_malformado.ml) | léxica | `linha 7, coluna 30: número malformado: '.5'` |
+| [expressao_operador_duplo.ml](invalidos/expressao_operador_duplo.ml) | sintática | `linha 3, coluna 40: '*' está sobrando aqui` |
+| [parenteses_sem_fechar.ml](invalidos/parenteses_sem_fechar.ml) | sintática | `linha 3, coluna 20`: parêntese aberto sem fechar |
+| [se_sem_condicao.ml](invalidos/se_sem_condicao.ml) | sintática | `linha 7, coluna 19: encontrei fim de linha` no lugar da condição |
+| [operacao_sem_requer.ml](invalidos/operacao_sem_requer.ml) | sintática | `linha 6, coluna 17: encontrei 'narrar', mas esperava 'requer'` |
+| [iniciar_fora_de_posicao.ml](invalidos/iniciar_fora_de_posicao.ml) | sintática | `linha 4, coluna 1`: declaração depois de `iniciar` |
+| [tipo_incompativel_soma.ml](invalidos/tipo_incompativel_soma.ml) | semântica | `linha 7, coluna 41: tipos incompatíveis para operador '+': 'texto' e 'inteiro'` |
+| [tipo_incompativel_atribuicao.ml](invalidos/tipo_incompativel_atribuicao.ml) | semântica | `linha 7, coluna 48: atribuição de tipo incompatível` |
+| [variavel_nao_declarada.ml](invalidos/variavel_nao_declarada.ml) | semântica | `linha 12, coluna 24: caminho ou membro 'fantasma.mensagem' inexistente` |
+| [metodo_receptor_invalido.ml](invalidos/metodo_receptor_invalido.ml) | semântica | `linha 7, coluna 9: receptor 'Campanha' não possui método de criação 'cenario'` |
+| [operacao_sem_booleano_requer.ml](invalidos/operacao_sem_booleano_requer.ml) | semântica | `linha 10, coluna 24: cláusula 'requer' exige expressão do tipo 'booleano'` |
+| [ciclo_dependencia_marcos.ml](invalidos/ciclo_dependencia_marcos.ml) | semântica | `linha 16, coluna 17: dependência cíclica detectada entre marcos: m1 -> m2 -> m1` |
+| [historia_de_outra_campanha.ml](invalidos/historia_de_outra_campanha.ml) | semântica | `linha 11, coluna 1: história 'camp2.historias.h2' não pertence à campanha 'camp1'` |
 
 Os nomes `ola`, `quadrado` e `espiral` são os pedidos no enunciado; o conteúdo foi
 adaptado ao domínio de RPG.
@@ -177,5 +207,5 @@ Com o ambiente virtual ativo no Git Bash:
 python -m unittest discover -s tests -v
 ```
 
-Os 55 testes cobrem a análise léxica (25 testes), a análise sintática (8 testes), o pipeline de visualização/extração (14 testes), a análise semântica (5 testes) e a execução/runtime (3 testes), verificando reconhecimento de tokens, precedência de operadores na árvore, layout/indentação, detecção e recuperação de erros, tipagem estática, ciclos em grafos e simulação da narrativa de RPG, além de validar todos os programas de teste em `exemplos/` e `invalidos/`.
+Os 56 testes cobrem a análise léxica (25 testes), a análise sintática (8 testes), o pipeline de visualização/extração (15 testes), a análise semântica (5 testes) e a execução/runtime (3 testes), verificando reconhecimento de tokens, precedência de operadores na árvore, layout/indentação, detecção e recuperação de erros, tipagem estática, ciclos em grafos e simulação da narrativa de RPG, além de validar todos os programas de teste em `exemplos/` e `invalidos/`.
 

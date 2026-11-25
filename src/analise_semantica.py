@@ -635,6 +635,8 @@ class VerificadorTiposVisitor(SuaLingParserVisitor):
 
 def validar_dependencias_marcos(arvore: Any, tabela: TabelaSimbolos, erros: list[Diagnostico]):
     """Extrai chamadas `marco.depende_de(outro)` e valida ausência de ciclos."""
+    # Posição de cada chamada `origem.depende_de(dep)`, usada para localizar os erros.
+    posicoes: dict[tuple[str, str], tuple[int, int]] = {}
 
     class ExtratorDependenciasVisitor(SuaLingParserVisitor):
         def visitExprChamada(self, ctx: SuaLingParser.ExprChamadaContext):
@@ -647,6 +649,7 @@ def validar_dependencias_marcos(arvore: Any, tabela: TabelaSimbolos, erros: list
                     if args:
                         marco_dep = args.getText().strip()
                         linha, coluna = _posicao(ctx)
+                        posicoes.setdefault((marco_origem, marco_dep), (linha, coluna))
 
                         if marco_origem in tabela.marcos:
                             tabela.marcos[marco_origem].dependencias.append(marco_dep)
@@ -685,9 +688,7 @@ def validar_dependencias_marcos(arvore: Any, tabela: TabelaSimbolos, erros: list
 
         for vizinho in grafo.get(nodo, []):
             if vizinho not in tabela.marcos:
-                m_info = tabela.marcos.get(nodo)
-                l = m_info.linha if m_info else 1
-                c = m_info.coluna if m_info else 1
+                l, c = posicoes.get((nodo, vizinho), (1, 1))
                 erros.append(
                     Diagnostico(
                         "semântico",
@@ -699,9 +700,7 @@ def validar_dependencias_marcos(arvore: Any, tabela: TabelaSimbolos, erros: list
                 continue
 
             if vizinho in pilha_rec:
-                m_info = tabela.marcos.get(nodo)
-                l = m_info.linha if m_info else 1
-                c = m_info.coluna if m_info else 1
+                l, c = posicoes.get((nodo, vizinho), (1, 1))
                 ciclo_str = " -> ".join(caminho + [vizinho])
                 erros.append(
                     Diagnostico(

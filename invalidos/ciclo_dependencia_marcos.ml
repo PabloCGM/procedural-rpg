@@ -1,5 +1,6 @@
 // ciclo_dependencia_marcos.ml
 // Erro semântico: dependência cíclica entre marcos (m1 depende de m2 e m2 depende de m1).
+// Erro esperado: linha 16, coluna 17, na dependência que fecha o ciclo.
 
 vila = Universo("vila")
     jornada = vila.campanha("jornada")

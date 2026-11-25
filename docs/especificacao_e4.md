@@ -70,7 +70,7 @@ flowchart LR
 
 ## 3. Regras Semânticas e Sistema de Tipos
 
-Abaixo estão todas as regras que o analisador semântico valida formalmente, extraídas de [docs/especificacao.md](file:///c:/Users/sergiogabriel/Desktop/Projetos/procedural-rpg/docs/especificacao.md).
+Abaixo estão todas as regras que o analisador semântico valida formalmente, extraídas de [docs/especificacao.md](especificacao.md).
 
 ### 3.1. Tipos de Dados Suportados
 A linguagem possui sistema estático de tipos com inferência e declaração explícita:
