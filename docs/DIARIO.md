@@ -133,3 +133,6 @@ guardar a posição de cada chamada `depende_de` e a apontar a que fecha o ciclo
 
 O README passou a listar os 15 inválidos com a fase e o erro de cada um. Corrigimos um link
 da especificação da E4 que apontava para um caminho local de um dos computadores.
+
+Na sessão interativa, o estado aparecia como `True` e `False`, a grafia do Python. Passamos
+a mostrar os valores como na linguagem: `verdadeiro`, `falso` e textos entre aspas.

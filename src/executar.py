@@ -68,7 +68,7 @@ def executar_pipeline(caminho: Path, apenas_semantico: bool = False, arvore_flag
         print("\n--- Estado Atual ---")
         for k, v in motor.memoria.items():
             if not k.endswith(".concluido"):
-                print(f"  • {k} = {v}")
+                print(f"  • {k} = {_formatar_valor(v)}")
 
         print("\nMarcos:")
         for m, status in motor.status_marcos.items():
@@ -107,6 +107,15 @@ def executar_pipeline(caminho: Path, apenas_semantico: bool = False, arvore_flag
         print("\n[HISTÓRIA ENCERRADA COM SUCESSO! Parabéns!]")
 
     return 0
+
+
+def _formatar_valor(valor) -> str:
+    """Mostra o valor com a grafia da linguagem (verdadeiro/falso, texto entre aspas)."""
+    if isinstance(valor, bool):
+        return "verdadeiro" if valor else "falso"
+    if isinstance(valor, str):
+        return f'"{valor}"'
+    return str(valor)
 
 
 def _exibir_resposta(resp):
